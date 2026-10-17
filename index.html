@@ -26,16 +26,16 @@
         .card { background-color: var(--card-bg); border-radius: 12px; padding: 16px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .card-title { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
         
-        .btn { width: 100%; background: linear-gradient(135deg, #059669, #10b981); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.2s; }
+        .btn { width: 100%; background: linear-gradient(135deg, #059669, #10b981); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.2s; }
+        .btn-secondary { background: linear-gradient(135deg, #3b82f6, #2563eb); margin-top: 8px; }
         .btn:active { opacity: 0.8; }
         
-        .coords-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .input-group { display: flex; flex-direction: column; gap: 4px; }
-        .input-group label { font-size: 0.75rem; color: var(--text-muted); }
-        .input-group input { background: var(--bg-color); border: 1px solid var(--border-color); color: white; padding: 8px; border-radius: 6px; font-size: 0.9rem; }
-        
-        .status-badge { text-align: center; padding: 16px; border-radius: 10px; font-weight: bold; font-size: 1.2rem; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
-        .score-val { font-size: 2.2rem; font-weight: 800; display: block; margin-top: 4px; }
+        .search-box { display: flex; gap: 8px; margin-bottom: 10px; }
+        .search-box input { flex: 1; background: var(--bg-color); border: 1px solid var(--border-color); color: white; padding: 10px; border-radius: 8px; font-size: 0.95rem; }
+        .search-box button { width: auto; padding: 0 16px; }
+
+        .status-badge { text-align: center; padding: 14px; border-radius: 10px; font-weight: bold; font-size: 1.1rem; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        .score-val { font-size: 2rem; font-weight: 800; display: block; margin-top: 2px; }
         
         .metric-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
         .metric-row:last-child { border-bottom: none; }
@@ -45,109 +45,145 @@
         .forest-card { background: rgba(16, 185, 129, 0.1); border: 1px dashed var(--accent-green); padding: 12px; border-radius: 8px; margin-top: 8px; font-size: 0.85rem; line-height: 1.4; }
         .forest-card strong { color: var(--accent-green); display: block; margin-bottom: 2px; }
 
-        .loading { text-align: center; color: var(--text-muted); padding: 20px; font-style: italic; }
+        .comparison-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+        .comp-item { background: var(--bg-color); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+        .comp-score { font-weight: bold; padding: 4px 8px; border-radius: 6px; }
+
+        .loading { text-align: center; color: var(--text-muted); padding: 15px; font-style: italic; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>🍄 Radar Porcini Appennino</h1>
-            <p>Analisi predittiva buttata (Toscano-Emiliano)</p>
+            <p>Cerca località e confronti intelligenti</p>
         </header>
 
-        <!-- Sezione Posizione -->
+        <!-- Sezione Ricerca per Nome o GPS -->
         <div class="card">
-            <div class="card-title">Posizione e Quota</div>
-            <button class="btn" onclick="fetchGPS()">📍 Rileva Posizione GPS</button>
-            <div class="coords-grid">
-                <div class="input-group">
-                    <label>Latitudine</label>
-                    <input type="text" id="lat" value="44.3500">
-                </div>
-                <div class="input-group">
-                    <label>Longitudine</label>
-                    <input type="text" id="lon" value="10.5160">
-                </div>
+            <div class="card-title">Cerca Località Appennino</div>
+            <div class="search-box">
+                <input type="text" id="locationSearch" placeholder="Es. Fanano, Pievepelago..." value="Fanano">
+                <button class="btn" onclick="searchLocation()">🔍 Cerca</button>
             </div>
+            <button class="btn btn-secondary" onclick="fetchGPS()">📍 Usa mia Posizione GPS</button>
         </div>
 
-        <!-- Risultato Analisi Buttata -->
+        <!-- Risultato Analisi Selezionata -->
         <div class="card">
-            <div class="card-title">Indice di Buttata Appennino</div>
+            <div class="card-title"><span id="locationTitle">Analisi per: Fanano</span></div>
             <div id="statusBadge" class="status-badge" style="background: #334155; color: #94a3b8;">
-                In attesa di analisi <span id="scoreVal" class="score_val">--%</span>
+                Analisi in corso... <span id="scoreVal" class="score_val">--%</span>
             </div>
             
             <div id="metricsList">
-                <div class="loading">Premi il tasto GPS o avvia l'analisi per calcolare i parametri meteo del bosco...</div>
+                <div class="loading">Caricamento dati meteo...</div>
             </div>
         </div>
 
-        <!-- Consigli Bosco -->
+        <!-- Profilo Bioclimatico -->
         <div class="card" id="adviceCard" style="display:none;">
-            <div class="card-title">Profilo Bioclimatico Rilevato</div>
+            <div class="card-title">Profilo Bioclimatico & Consiglio</div>
             <div class="forest-card" id="forestAdviceText"></div>
+        </div>
+
+        <!-- Radar Alternative Appennino -->
+        <div class="card">
+            <div class="card-title">🏆 Confronto Mete Appennino</div>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">Verifica al volo dove ci sono le condizioni migliori in zona:</p>
+            <button class="btn" onclick="scanAppennino()">📊 Confronta Zone Vicine</button>
+            <div id="comparisonResults" class="comparison-list" style="margin-top:10px;"></div>
         </div>
     </div>
 
     <script>
+        // Coordinate predefinite di Fanano (MO)
+        let currentLat = 44.2952;
+        let currentLon = 10.7634;
+        let currentPlaceName = "Fanano (MO)";
+
         window.onload = function() {
-            runAnalysis();
+            runAnalysis(currentLat, currentLon, currentPlaceName);
         };
+
+        // Ricerca località tramite Open-Meteo Geocoding API
+        async function searchLocation() {
+            const query = document.getElementById('locationSearch').value.trim();
+            if (!query) return;
+
+            const metricsDiv = document.getElementById('metricsList');
+            metricsDiv.innerHTML = `<div class="loading">Cerco "${query}" nel territorio...</div>`;
+
+            try {
+                const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=it&format=json`;
+                const res = await fetch(geoUrl);
+                const data = await res.json();
+
+                if (!data.results || data.results.length === 0) {
+                    alert("Località non trovata. Prova con un altro nome (es. Sestola, Pievepelago, Abetone).");
+                    metricsDiv.innerHTML = '<div class="loading" style="color:var(--accent-red);">Località non trovata.</div>';
+                    return;
+                }
+
+                const place = data.results[0];
+                currentLat = place.latitude;
+                currentLon = place.longitude;
+                currentPlaceName = `${place.name} (${place.admin1 || 'Appennino'})`;
+
+                document.getElementById('locationTitle').innerText = `Analisi per: ${currentPlaceName}`;
+                runAnalysis(currentLat, currentLon, currentPlaceName);
+
+            } catch (err) {
+                console.error(err);
+                alert("Errore durante la ricerca della località.");
+            }
+        }
 
         function fetchGPS() {
             if (!navigator.geolocation) {
-                alert("La geolocalizzazione non è supportata dal tuo browser.");
+                alert("La geolocalizzazione non è supportata dal browser.");
                 return;
             }
-            const btn = document.querySelector('.btn');
-            btn.innerText = "Rilevamento in corso...";
+            document.getElementById('metricsList').innerHTML = '<div class="loading">Rilevamento GPS in corso...</div>';
             navigator.geolocation.getCurrentPosition(position => {
-                document.getElementById('lat').value = position.coords.latitude.toFixed(4);
-                document.getElementById('lon').value = position.coords.longitude.toFixed(4);
-                btn.innerText = "📍 Rileva Posizione GPS";
-                runAnalysis();
+                currentLat = position.coords.latitude;
+                currentLon = position.coords.longitude;
+                currentPlaceName = "Posizione Attuale (GPS)";
+                document.getElementById('locationTitle').innerText = `Analisi per: ${currentPlaceName}`;
+                runAnalysis(currentLat, currentLon, currentPlaceName);
             }, error => {
-                alert("Impossibile rilevare la posizione. Verifica i permessi GPS.");
-                btn.innerText = "📍 Rileva Posizione GPS";
-            }, { timeout: 10000, enableHighAccuracy: true });
+                alert("Impossibile rilevare la posizione.");
+            }, { timeout: 10000 });
         }
 
-        async function runAnalysis() {
-            const lat = document.getElementById('lat').value;
-            const lon = document.getElementById('lon').value;
+        async function runAnalysis(lat, lon, placeName) {
             const metricsDiv = document.getElementById('metricsList');
             const badge = document.getElementById('statusBadge');
             const adviceCard = document.getElementById('adviceCard');
             const adviceText = document.getElementById('forestAdviceText');
 
-            metricsDiv.innerHTML = '<div class="loading">Interrogazione modelli meteo appenninici (Open-Meteo)...</div>';
+            metricsDiv.innerHTML = '<div class="loading">Elaborazione modelli meteo e umidità suolo...</div>';
 
-            // Richiediamo gli ultimi 14 giorni passati + previsioni future
             const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&past_days=14&daily=precipitation_sum,temperature_2m_max,temperature_2m_min,windspeed_10m_max&timezone=auto`;
 
             try {
                 const response = await fetch(url);
                 const data = await response.json();
 
-                const elevation = data.elevation || 800; // Default media quota appenninica se non restituito
+                const elevation = data.elevation || 800;
                 const daily = data.daily;
-                const times = daily.time;
                 const precip = daily.precipitation_sum;
                 const tmax = daily.temperature_2m_max;
                 const tmin = daily.temperature_2m_min;
                 const wind = daily.windspeed_10m_max;
 
-                // Indice odierno è circa a metà array (dopo 14 giorni passati)
                 const todayIndex = 14; 
 
-                // Calcolo pioggia cumulata negli ultimi 10 giorni (da index 4 a 13)
                 let rain10Days = 0;
                 for (let i = todayIndex - 10; i < todayIndex; i++) {
                     if (precip[i]) rain10Days += precip[i];
                 }
 
-                // Temperatura media recente (ultimi 5 giorni)
                 let tempSum = 0;
                 let tempDaysCount = 0;
                 for (let i = todayIndex - 5; i < todayIndex; i++) {
@@ -158,36 +194,31 @@
                 }
                 const avgTemp = tempDaysCount > 0 ? (tempSum / tempDaysCount) : 15;
 
-                // Vento massimo recente (ultimi 3 giorni)
                 let maxWindRecent = 0;
                 for (let i = todayIndex - 3; i <= todayIndex; i++) {
                     if (wind[i] && wind[i] > maxWindRecent) maxWindRecent = wind[i];
                 }
 
-                // Determinazione Fascia Altimetrica e Bosco
                 let forestType = "";
                 let idealTempMin = 14, idealTempMax = 20;
                 if (elevation < 700) {
-                    forestType = "Bassa Quota (300-700m) — Castagneti e Querceti. Specie: Boletus aereus (Nero) e Estatino.";
+                    forestType = "Bassa Quota (300-700m) — Castagneti e Querceti (Aereus ed Estatini).";
                     idealTempMin = 18; idealTempMax = 25;
                 } else if (elevation >= 700 && elevation <= 1200) {
-                    forestType = "Media Quota (700-1200m) — Faggete pure o miste con Castagno. Specie: Boletus edulis e Pinophilus.";
+                    forestType = "Media Quota (700-1200m) — Faggete pure o miste con Castagno (Edulis e Pinophilus).";
                     idealTempMin = 13; idealTempMax = 19;
                 } else {
-                    forestType = "Alta Quota (>1200m) — Faggete alte, Abetaie e Mirtilleti appenninici. Specie: Boletus edulis.";
+                    forestType = "Alta Quota (>1200m) — Faggete alte e Abetaie appenniniche.";
                     idealTempMin = 9; idealTempMax = 15;
                 }
 
-                // Algoritmo di punteggio Buttata (0-100)
-                // 1. Pioggia (Ottimale tra 30mm e 90mm negli ultimi 10 giorni)
                 let rainScore = 0;
                 if (rain10Days >= 25 && rain10Days <= 90) rainScore = 100;
                 else if (rain10Days > 10 && rain10Days < 25) rainScore = 50;
                 else if (rain10Days > 90 && rain10Days <= 130) rainScore = 70;
-                else if (rain10Days > 130) rainScore = 40; // Troppa acqua / dilavamento
-                else rainScore = 10; // Troppo secco
+                else if (rain10Days > 130) rainScore = 40;
+                else rainScore = 10;
 
-                // 2. Temperatura (Vicina al range ideale della fascia)
                 let tempScore = 100;
                 if (avgTemp < idealTempMin) {
                     tempScore = Math.max(0, 100 - (idealTempMin - avgTemp) * 15);
@@ -195,7 +226,6 @@
                     tempScore = Math.max(0, 100 - (avgTemp - idealTempMax) * 15);
                 }
 
-                // 3. Vento (Se vento forte recente > 30 km/h, penalizza forte per essiccazione suolo)
                 let windPenalty = 0;
                 if (maxWindRecent > 28) windPenalty = 25;
                 else if (maxWindRecent > 20) windPenalty = 10;
@@ -203,7 +233,6 @@
                 let finalScore = Math.round((rainScore * 0.6) + (tempScore * 0.4) - windPenalty);
                 finalScore = Math.max(0, Math.min(100, finalScore));
 
-                // Assegnazione Badge e Colore
                 let badgeText = "";
                 let badgeColor = "";
                 if (finalScore < 25) {
@@ -224,7 +253,6 @@
                 badge.style.color = "#ffffff";
                 badge.innerHTML = `${badgeText} <span class="score-val">${finalScore}%</span>`;
 
-                // Rendering metriche dettagliate
                 metricsList.innerHTML = `
                     <div class="metric-row">
                         <span class="metric-label">Quota Rilevata:</span>
@@ -245,12 +273,94 @@
                 `;
 
                 adviceCard.style.display = "block";
-                adviceText.innerHTML = `<strong>Fascia Ecologica:</strong> ${forestType}<br><br><em>Nota appenninica:</em> Con ${rain10Days.toFixed(1)}mm di pioggia e ${avgTemp.toFixed(1)}°C medi, il termometro biologico del bosco è ${finalScore >= 50 ? 'attivo. Cerca nelle zone di crinale o impluvi riparati dai venti di tramontana.' : 'ancora freddo o asciutto. In attesa del giusto shock termico/idrico.'}`;
+                adviceText.innerHTML = `<strong>Ambiente:</strong> ${forestType}<br><br><em>Verdetto:</em> ${finalScore >= 50 ? 'Zona attiva! Ottime probabilità nei boschi esposti bene.' : 'Condizioni non ottimali in questa specifica zona, controlla il box di confronto qui sotto per trovare alternative migliori in Appennino!'}`;
 
             } catch (err) {
                 console.error(err);
-                metricsList.innerHTML = '<div class="loading" style="color:var(--accent-red);">Errore nel recupero dati meteo. Riprova tra poco.</div>';
+                metricsList.innerHTML = '<div class="loading" style="color:var(--accent-red);">Errore nel recupero dati. Riprova.</div>';
             }
+        }
+
+        // Funzione per confrontare le principali mete dell'Appennino Tosco-Emiliano
+        async function scanAppennino() {
+            const resultsDiv = document.getElementById('comparisonResults');
+            resultsDiv.innerHTML = '<div class="loading">Scansione in corso di Fanano, Pievepelago, Sestola, Fiumalbo, Abetone e Lizzano...</div>';
+
+            const locations = [
+                { name: "Fanano (MO)", lat: 44.2952, lon: 10.7634 },
+                { name: "Pievepelago (MO)", lat: 44.2185, lon: 10.6180 },
+                { name: "Sestola (MO)", lat: 44.2330, lon: 10.7705 },
+                { name: "Fiumalbo (MO)", lat: 44.1887, lon: 10.6508 },
+                { name: "Abetone (PT)", lat: 44.1527, lon: 10.6695 },
+                { name: "Lizzano in B. (BO)", lat: 44.2307, lon: 10.8872 }
+            ];
+
+            let htmlOutput = "";
+            let bestPlace = "";
+            let highestScore = -1;
+
+            for (let loc of locations) {
+                try {
+                    const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&past_days=14&daily=precipitation_sum,temperature_2m_max,temperature_2m_min,windspeed_10m_max&timezone=auto`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    const daily = data.daily;
+                    const precip = daily.precipitation_sum;
+                    const tmax = daily.temperature_2m_max;
+                    const tmin = daily.temperature_2m_min;
+                    const wind = daily.windspeed_10m_max;
+                    const todayIndex = 14;
+
+                    let rain10 = 0;
+                    for (let i = todayIndex - 10; i < todayIndex; i++) if (precip[i]) rain10 += precip[i];
+
+                    let tempSum = 0, count = 0;
+                    for (let i = todayIndex - 5; i < todayIndex; i++) {
+                        if (tmax[i] !== undefined) { tempSum += (tmax[i] + tmin[i]) / 2; count++; }
+                    }
+                    let avgT = count > 0 ? tempSum / count : 15;
+
+                    let maxW = 0;
+                    for (let i = todayIndex - 3; i <= todayIndex; i++) if (wind[i] > maxW) maxW = wind[i];
+
+                    // Semplificazione calcolo punteggio per confronto rapido
+                    let rScore = (rain10 >= 25 && rain10 <= 90) ? 100 : (rain10 > 10 ? 50 : 15);
+                    let tScore = (avgT >= 12 && avgT <= 22) ? 100 : 50;
+                    let wPen = maxW > 28 ? 25 : 0;
+                    let score = Math.max(0, Math.min(100, Math.round((rScore * 0.6) + (tScore * 0.4) - wPen)));
+
+                    if (score > highestScore) {
+                        highestScore = score;
+                        bestPlace = loc.name;
+                    }
+
+                    let colorBg = score >= 70 ? '#059669' : (score >= 50 ? '#10b981' : (score >= 25 ? '#f59e0b' : '#ef4444'));
+
+                    htmlOutput += `
+                        <div class="comp-item" onclick="loadSearchedCoords(${loc.lat}, ${loc.lon}, '${loc.name}')" style="cursor:pointer;">
+                            <span>📍 <strong>${loc.name}</strong></span>
+                            <span class="comp-score" style="background:${colorBg}; color:white;">${score}%</span>
+                        </div>
+                    `;
+                } catch (e) {
+                    // Ignora errori singoli
+                }
+            }
+
+            resultsDiv.innerHTML = `
+                <div style="font-size:0.85rem; color:var(--accent-green); margin-bottom:6px; font-weight:bold;">💡 Meta consigliata oggi: ${bestPlace} (${highestScore}%)</div>
+                ${htmlOutput}
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px; text-align:center;">Ticca una località per caricarne i dettagli completi sopra.</div>
+            `;
+        }
+
+        function loadSearchedCoords(lat, lon, name) {
+            currentLat = lat;
+            currentLon = lon;
+            currentPlaceName = name;
+            document.getElementById('locationTitle').innerText = `Analisi per: ${name}`;
+            runAnalysis(lat, lon, name);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     </script>
 </body>
