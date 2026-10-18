@@ -56,14 +56,14 @@
     <div class="container">
         <header>
             <h1>🍄 Radar Porcini Appennino</h1>
-            <p>Cerca località e confronti intelligenti</p>
+            <p>Ricerca completa: Passi, Frazioni e Comuni</p>
         </header>
 
         <!-- Sezione Ricerca per Nome o GPS -->
         <div class="card">
-            <div class="card-title">Cerca Località Appennino</div>
+            <div class="card-title">Cerca Località o Passo Appenninico</div>
             <div class="search-box">
-                <input type="text" id="locationSearch" placeholder="Es. Fanano, Pievepelago..." value="Fanano">
+                <input type="text" id="locationSearch" placeholder="Es. Passo delle Radici, Canevare..." value="Passo delle Radici">
                 <button class="btn" onclick="searchLocation()">🔍 Cerca</button>
             </div>
             <button class="btn btn-secondary" onclick="fetchGPS()">📍 Usa mia Posizione GPS</button>
@@ -71,7 +71,7 @@
 
         <!-- Risultato Analisi Selezionata -->
         <div class="card">
-            <div class="card-title"><span id="locationTitle">Analisi per: Fanano</span></div>
+            <div class="card-title"><span id="locationTitle">Analisi per: Passo delle Radici</span></div>
             <div id="statusBadge" class="status-badge" style="background: #334155; color: #94a3b8;">
                 Analisi in corso... <span id="scoreVal" class="score_val">--%</span>
             </div>
@@ -89,59 +89,133 @@
 
         <!-- Radar Alternative Appennino -->
         <div class="card">
-            <div class="card-title">🏆 Confronto Mete Appennino</div>
-            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">Verifica al volo dove ci sono le condizioni migliori in zona:</p>
-            <button class="btn" onclick="scanAppennino()">📊 Confronta Zone Vicine</button>
+            <div class="card-title">🏆 Confronto Passi & Frazioni Key</div>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:8px;">Classifica in tempo reale dei principali punti d'interesse dell'Appennino:</p>
+            <button class="btn" onclick="scanAppennino()">📊 Confronta Punti Chiave</button>
             <div id="comparisonResults" class="comparison-list" style="margin-top:10px;"></div>
         </div>
     </div>
 
     <script>
-        // Coordinate predefinite di Fanano (MO)
-        let currentLat = 44.2952;
-        let currentLon = 10.7634;
-        let currentPlaceName = "Fanano (MO)";
+        // Database esteso di Passi, Frazioni e Vette dell'Appennino Tosco-Emiliano
+        const LOCAL_DATABASE = {
+            // Passi e Valichi
+            "passo delle radici": { lat: 44.2411, lon: 10.5186, name: "Passo delle Radici (1529m)" },
+            "passo del cerreto": { lat: 44.3015, lon: 10.2173, name: "Passo del Cerreto (1261m)" },
+            "passo della cisa": { lat: 44.4718, lon: 9.9275, name: "Passo della Cisa (1041m)" },
+            "passo pradarena": { lat: 44.2818, lon: 10.2705, name: "Passo di Pradarena (1579m)" },
+            "passo del lagastrello": { lat: 44.3361, lon: 10.1322, name: "Passo del Lagastrello (1200m)" },
+            "passo del tomarlo": { lat: 44.5298, lon: 9.4883, name: "Passo del Tomarlo (1485m)" },
+            "passo della calabrana": { lat: 44.2201, lon: 10.6302, name: "Passo della Calabrana" },
+            "foce a giovo": { lat: 44.1481, lon: 10.5898, name: "Foce a Giovo (1674m)" },
+            "passo dei carpinelli": { lat: 44.1883, lon: 10.2289, name: "Passo dei Carpinelli (842m)" },
+            "passo della collina": { lat: 44.0883, lon: 10.9389, name: "Passo della Collina (932m)" },
+
+            // Frazioni e Località Montane
+            "piandelagotti": { lat: 44.2341, lon: 10.5361, name: "Piandelagotti (Frassinoro)" },
+            "san pellegrino in alpe": { lat: 44.1923, lon: 10.4789, name: "San Pellegrino in Alpe (LU)" },
+            "canevare": { lat: 44.2120, lon: 10.7380, name: "Canevare (Fanano)" },
+            "civago": { lat: 44.2483, lon: 10.3781, name: "Civago (Villa Minozzo)" },
+            "febbio": { lat: 44.2981, lon: 10.4189, name: "Febbio (Villa Minozzo)" },
+            "ospitale": { lat: 44.1883, lon: 10.7881, name: "Ospitale (Fanano)" },
+            "fellicarolo": { lat: 44.2281, lon: 10.7881, name: "Fellicarolo (Fanano)" },
+            "sant'anna pelago": { lat: 44.2018, lon: 10.5818, name: "Sant'Anna Pelago (Pievepelago)" },
+            "rotari": { lat: 44.2218, lon: 10.5618, name: "Rotari (Fiumalbo)" },
+            "barigazzo": { lat: 44.2781, lon: 10.5881, name: "Barigazzo (Lama Mocogno)" },
+            "cerreto laghi": { lat: 44.2881, lon: 10.2381, name: "Cerreto Laghi (Collagna)" },
+            "pratospilla": { lat: 44.3881, lon: 10.1181, name: "Pratospilla (Monchio delle Corti)" },
+            "schia": { lat: 44.4881, lon: 10.1881, name: "Schia (Tizzano Val Parma)" },
+            "doganaccia": { lat: 44.1381, lon: 10.7181, name: "Doganaccia (Cutigliano)" },
+            "pianaccio": { lat: 44.1781, lon: 10.8881, name: "Pianaccio (Lizzano in Belvedere)" },
+
+            // Comuni e Vette
+            "fiumalbo": { lat: 44.1887, lon: 10.6508, name: "Fiumalbo (MO)" },
+            "sestola": { lat: 44.2330, lon: 10.7705, name: "Sestola (MO)" },
+            "fanano": { lat: 44.2952, lon: 10.7634, name: "Fanano (MO)" },
+            "pievepelago": { lat: 44.2185, lon: 10.6180, name: "Pievepelago (MO)" },
+            "abetone": { lat: 44.1527, lon: 10.6695, name: "Abetone (PT)" },
+            "corno alle scale": { lat: 44.1333, lon: 10.8333, name: "Corno alle Scale (BO)" },
+            "frassinoro": { lat: 44.2961, lon: 10.5711, name: "Frassinoro (MO)" },
+            "lama mocogno": { lat: 44.3081, lon: 10.7311, name: "Lama Mocogno (MO)" },
+            "monte cimone": { lat: 44.1938, lon: 10.6997, name: "Monte Cimone (2165m)" }
+        };
+
+        let currentLat = 44.2411;
+        let currentLon = 10.5186;
+        let currentPlaceName = "Passo delle Radici (1529m)";
 
         window.onload = function() {
             runAnalysis(currentLat, currentLon, currentPlaceName);
         };
 
-        // Ricerca località tramite Open-Meteo Geocoding API
         async function searchLocation() {
             const query = document.getElementById('locationSearch').value.trim();
             if (!query) return;
 
             const metricsDiv = document.getElementById('metricsList');
-            metricsDiv.innerHTML = `<div class="loading">Cerco "${query}" nel territorio...</div>`;
+            metricsDiv.innerHTML = `<div class="loading">Ricerca in corso per "${query}"...</div>`;
 
+            const queryLower = query.toLowerCase();
+
+            // 1. Controllo immediato nel database locale
+            for (let key in LOCAL_DATABASE) {
+                if (key.includes(queryLower) || queryLower.includes(key)) {
+                    const item = LOCAL_DATABASE[key];
+                    currentLat = item.lat;
+                    currentLon = item.lon;
+                    currentPlaceName = item.name;
+                    document.getElementById('locationTitle').innerText = `Analisi per: ${currentPlaceName}`;
+                    runAnalysis(currentLat, currentLon, currentPlaceName);
+                    return;
+                }
+            }
+
+            // 2. Ricerca OpenStreetMap (Nominatim) per qualsiasi altra frazione/strada d'Italia
             try {
-                const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=it&format=json`;
-                const res = await fetch(geoUrl);
+                const osmUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ' Appennino Italia')}&format=json&limit=1`;
+                const res = await fetch(osmUrl, { headers: { 'User-Agent': 'RadarPorciniAppennino/1.0' } });
                 const data = await res.json();
 
-                if (!data.results || data.results.length === 0) {
-                    alert("Località non trovata. Prova con un altro nome (es. Sestola, Pievepelago, Abetone).");
-                    metricsDiv.innerHTML = '<div class="loading" style="color:var(--accent-red);">Località non trovata.</div>';
+                if (data && data.length > 0) {
+                    const place = data[0];
+                    currentLat = parseFloat(place.lat);
+                    currentLon = parseFloat(place.lon);
+                    
+                    const parts = place.display_name.split(',');
+                    currentPlaceName = `${parts[0].trim()} (${parts[1] ? parts[1].trim() : 'Appennino'})`;
+
+                    document.getElementById('locationTitle').innerText = `Analisi per: ${currentPlaceName}`;
+                    runAnalysis(currentLat, currentLon, currentPlaceName);
                     return;
                 }
 
-                const place = data.results[0];
-                currentLat = place.latitude;
-                currentLon = place.longitude;
-                currentPlaceName = `${place.name} (${place.admin1 || 'Appennino'})`;
+                // 3. Fallback Open-Meteo Geocoding
+                const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=it&format=json`;
+                const resGeo = await fetch(geoUrl);
+                const dataGeo = await resGeo.json();
 
-                document.getElementById('locationTitle').innerText = `Analisi per: ${currentPlaceName}`;
-                runAnalysis(currentLat, currentLon, currentPlaceName);
+                if (dataGeo.results && dataGeo.results.length > 0) {
+                    const place = dataGeo.results[0];
+                    currentLat = place.latitude;
+                    currentLon = place.longitude;
+                    currentPlaceName = `${place.name} (${place.admin1 || 'Appennino'})`;
+
+                    document.getElementById('locationTitle').innerText = `Analisi per: ${currentPlaceName}`;
+                    runAnalysis(currentLat, currentLon, currentPlaceName);
+                } else {
+                    alert("Località non trovata. Controlla il nome o prova a cercare la frazione principale.");
+                    metricsDiv.innerHTML = '<div class="loading" style="color:var(--accent-red);">Località non trovata.</div>';
+                }
 
             } catch (err) {
                 console.error(err);
-                alert("Errore durante la ricerca della località.");
+                alert("Errore durante la ricerca.");
             }
         }
 
         function fetchGPS() {
             if (!navigator.geolocation) {
-                alert("La geolocalizzazione non è supportata dal browser.");
+                alert("Geolocalizzazione non supportata.");
                 return;
             }
             document.getElementById('metricsList').innerHTML = '<div class="loading">Rilevamento GPS in corso...</div>';
@@ -152,7 +226,7 @@
                 document.getElementById('locationTitle').innerText = `Analisi per: ${currentPlaceName}`;
                 runAnalysis(currentLat, currentLon, currentPlaceName);
             }, error => {
-                alert("Impossibile rilevare la posizione.");
+                alert("Impossibile rilevare la posizione GPS.");
             }, { timeout: 10000 });
         }
 
@@ -162,7 +236,7 @@
             const adviceCard = document.getElementById('adviceCard');
             const adviceText = document.getElementById('forestAdviceText');
 
-            metricsDiv.innerHTML = '<div class="loading">Elaborazione modelli meteo e umidità suolo...</div>';
+            metricsDiv.innerHTML = '<div class="loading">Elaborazione modelli microclimatici in corso...</div>';
 
             const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&past_days=14&daily=precipitation_sum,temperature_2m_max,temperature_2m_min,windspeed_10m_max&timezone=auto`;
 
@@ -202,13 +276,13 @@
                 let forestType = "";
                 let idealTempMin = 14, idealTempMax = 20;
                 if (elevation < 700) {
-                    forestType = "Bassa Quota (300-700m) — Castagneti e Querceti (Aereus ed Estatini).";
+                    forestType = "Bassa Quota (<700m) — Castagneti e Querceti (Aereus / Estatini).";
                     idealTempMin = 18; idealTempMax = 25;
                 } else if (elevation >= 700 && elevation <= 1200) {
                     forestType = "Media Quota (700-1200m) — Faggete pure o miste con Castagno (Edulis e Pinophilus).";
                     idealTempMin = 13; idealTempMax = 19;
                 } else {
-                    forestType = "Alta Quota (>1200m) — Faggete alte e Abetaie appenniniche.";
+                    forestType = "Alta Quota / Crinale (>1200m) — Faggete alte, Abetaie e Mirtilleti Appenninici.";
                     idealTempMin = 9; idealTempMax = 15;
                 }
 
@@ -255,7 +329,7 @@
 
                 metricsList.innerHTML = `
                     <div class="metric-row">
-                        <span class="metric-label">Quota Rilevata:</span>
+                        <span class="metric-label">Quota Reale:</span>
                         <span class="metric-value">${Math.round(elevation)} m s.l.m.</span>
                     </div>
                     <div class="metric-row">
@@ -273,7 +347,7 @@
                 `;
 
                 adviceCard.style.display = "block";
-                adviceText.innerHTML = `<strong>Ambiente:</strong> ${forestType}<br><br><em>Verdetto:</em> ${finalScore >= 50 ? 'Zona attiva! Ottime probabilità nei boschi esposti bene.' : 'Condizioni non ottimali in questa specifica zona, controlla il box di confronto qui sotto per trovare alternative migliori in Appennino!'}`;
+                adviceText.innerHTML = `<strong>Ambiente:</strong> ${forestType}<br><br><em>Verdetto:</em> ${finalScore >= 50 ? 'Microclima attivo per questa quota! Ottime probabilità nei versanti protetti dai venti secchi.' : 'Condizioni non ancora ideali. Prova a verificare altre quote o vallate dal riquadro in basso.'}`;
 
             } catch (err) {
                 console.error(err);
@@ -281,18 +355,18 @@
             }
         }
 
-        // Funzione per confrontare le principali mete dell'Appennino Tosco-Emiliano
         async function scanAppennino() {
             const resultsDiv = document.getElementById('comparisonResults');
-            resultsDiv.innerHTML = '<div class="loading">Scansione in corso di Fanano, Pievepelago, Sestola, Fiumalbo, Abetone e Lizzano...</div>';
+            resultsDiv.innerHTML = '<div class="loading">Scansione in corso dei punti chiave dell\'Appennino...</div>';
 
             const locations = [
-                { name: "Fanano (MO)", lat: 44.2952, lon: 10.7634 },
+                { name: "Passo Radici (1529m)", lat: 44.2411, lon: 10.5186 },
+                { name: "Piandelagotti (Frassinoro)", lat: 44.2341, lon: 10.5361 },
                 { name: "Pievepelago (MO)", lat: 44.2185, lon: 10.6180 },
-                { name: "Sestola (MO)", lat: 44.2330, lon: 10.7705 },
-                { name: "Fiumalbo (MO)", lat: 44.1887, lon: 10.6508 },
+                { name: "Passo Cerreto (1261m)", lat: 44.3015, lon: 10.2173 },
                 { name: "Abetone (PT)", lat: 44.1527, lon: 10.6695 },
-                { name: "Lizzano in B. (BO)", lat: 44.2307, lon: 10.8872 }
+                { name: "Canevare (Fanano)", lat: 44.2120, lon: 10.7380 },
+                { name: "Civago (RE)", lat: 44.2483, lon: 10.3781 }
             ];
 
             let htmlOutput = "";
@@ -323,9 +397,8 @@
                     let maxW = 0;
                     for (let i = todayIndex - 3; i <= todayIndex; i++) if (wind[i] > maxW) maxW = wind[i];
 
-                    // Semplificazione calcolo punteggio per confronto rapido
                     let rScore = (rain10 >= 25 && rain10 <= 90) ? 100 : (rain10 > 10 ? 50 : 15);
-                    let tScore = (avgT >= 12 && avgT <= 22) ? 100 : 50;
+                    let tScore = (avgT >= 9 && avgT <= 22) ? 100 : 50;
                     let wPen = maxW > 28 ? 25 : 0;
                     let score = Math.max(0, Math.min(100, Math.round((rScore * 0.6) + (tScore * 0.4) - wPen)));
 
@@ -342,15 +415,13 @@
                             <span class="comp-score" style="background:${colorBg}; color:white;">${score}%</span>
                         </div>
                     `;
-                } catch (e) {
-                    // Ignora errori singoli
-                }
+                } catch (e) {}
             }
 
             resultsDiv.innerHTML = `
-                <div style="font-size:0.85rem; color:var(--accent-green); margin-bottom:6px; font-weight:bold;">💡 Meta consigliata oggi: ${bestPlace} (${highestScore}%)</div>
+                <div style="font-size:0.85rem; color:var(--accent-green); margin-bottom:6px; font-weight:bold;">💡 Punti top di oggi: ${bestPlace} (${highestScore}%)</div>
                 ${htmlOutput}
-                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px; text-align:center;">Ticca una località per caricarne i dettagli completi sopra.</div>
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px; text-align:center;">Tocca un punto per caricarne i dettagli in cima.</div>
             `;
         }
 
